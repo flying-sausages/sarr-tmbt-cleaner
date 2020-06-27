@@ -1,0 +1,48 @@
+#!/bin/bash
+# Flying_sausages 2020, GPL3
+
+#Returns all files under a directory (transmission download dir by default), which have only one reference to the inode (Are not hardlinked)
+# $1 = Expression to pass to grep (prepend with -i for case insensitive)
+# ($2) = the location you would like to search (Default: from ~/.config/transmission-daemon/settings.json)
+function get_nonhl_files () {
+    if [[ -n $1 ]]; then
+        usepath=$(realpath "$1") 
+        # echo "Path = $usepath"
+        if [[ ! -d $usepath ]]; then 
+            echo "ERROR: Directory does not exist"
+            return 1
+        fi
+        location="$usepath"
+
+    else
+        location=$(grep download-dir ~/.config/transmission-daemon/settings.json | cut -d\" -f 4)
+    fi
+    find "$location" -type f -links 1 -print | sort
+}
+
+
+#Just a wrapper for the transmission-remote function
+function trbtwrap () {
+    confpath="$HOME/.config/sarr-tmbt-cleaner.conf"
+    if [[ ! -f $confpath ]]; then return 1 ; fi
+    #shellcheck source=conf.default
+    source "${confpath}"
+    transmission-remote "$host" -n "$userpass" "$@"
+}
+
+#Gets the single-file torrent ID based on a basename
+# $1 Full path or name to get the transmission ID of
+function trbt_get_ID_From_file () {
+    usedpath=$1
+    filename=$(basename "$usedpath")
+    # echo "filename = $filename"
+    trbtwrap -l | grep "$filename" | awk '{ print $1 }' | cut -d\* -f 1
+}
+
+#Deletes and removes torrent and its payload
+# $1 ID of the offending torrent to remove
+function remove_loose_transmission_payload () { 
+    torrent_ID="$1"
+    trbtwrap -rad "$torrent_ID"
+}
+

@@ -1,0 +1,6 @@
+#!/bin/bash
+#shellcheck disable=SC2034
+# The string to pass to host. If you are using localhost:9091, you can omit this.
+host=localhost:9091
+# The user authentication set to pass to tranmsission-remote
+userpass=<user>:<password>
